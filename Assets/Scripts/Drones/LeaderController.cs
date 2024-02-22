@@ -30,6 +30,13 @@ public class LeaderController : MonoBehaviour
     public float encircleDistance = 0f;
     public Encircling encirclingBehavior = new Encircling();
 
+    public Guiding guidingBehavior = new Guiding();
+    public bool isGuidingHumanActive = false;
+    public float approachDistance = 0f;
+    public ObstacleBoid GuidetHuman = null;
+    //public float encircleAngle = 0f;
+    //public float encircleDistance = 0f;
+
 
     public bool isUpperFencingActive = true;
     public Fencing3D upperFencingBehavior = new Fencing3D();
@@ -44,7 +51,8 @@ public class LeaderController : MonoBehaviour
     internal float droneTime = 0;
 
     public Rigidbody rb;
-
+    Transform test;
+    //SwarmController swarmController;
     // Start is called before the first frame update
     void Start()
     {
@@ -53,9 +61,11 @@ public class LeaderController : MonoBehaviour
         wanderingBehavior.Init(transform);
         pursuitBehavior.Init(transform, droneController.transform);
         encirclingBehavior.Init(droneController.id, transform, obstacleBoids);
+        guidingBehavior.Init(droneController.id, transform, obstacleBoids);
+        //swarmController = GetComponent<SwarmController>();
 
         pursuitInferenceAgent = GetComponent<InferenceAgent>();
-
+        
         upperFencingBehavior.Init(transform);
         lowerFencingBehavior.Init(transform);
         lowerFencingBehavior.yMax = 1.4f;
@@ -68,7 +78,11 @@ public class LeaderController : MonoBehaviour
 
     // Update is called once per frame
     void Update()
-    {
+    {   
+        //test = swarmController.d;   
+        //var drone = test.Find("Drone");
+        //Debug.Log(swarmController.step);
+            
         //Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         //if (Physics.Raycast(ray, out RaycastHit hit) && Input.GetMouseButtonDown(0))
         //{
@@ -93,20 +107,22 @@ public class LeaderController : MonoBehaviour
 
         if (isPursuitActive && !pursuitBehavior.HasLeaderReachedTarget())
         {
-            if (isEncircleHumanActive)
-            {
+            //if (isEncircleHumanActive)
+            //{
                 
-                pursuitBehavior.target = encirclingBehavior.GetTargetPosition(currentHuman?.GetBoid(), encircleAngle, encircleDistance);
-                targetPosition = pursuitBehavior.target != null ? pursuitBehavior.target.Value : Vector3.zero;
-            }
+            //    pursuitBehavior.target = encirclingBehavior.GetTargetPosition(currentHuman?.GetBoid(), encircleAngle, encircleDistance);
+            //    targetPosition = pursuitBehavior.target != null ? pursuitBehavior.target.Value : Vector3.zero;
+            //}
 
             if (pursuitBehavior.target != null)
             {
+                //Debug.Log(pursuitBehavior.target);
                 if (pursuitInferenceAgent == null)
                 {
                     nextRotation = Quaternion.LookRotation(pursuitBehavior.GetPursuitVector().Value, Vector3.up);
                 } else
                 {
+                    Debug.Log(pursuitInferenceAgent);
                     pursuitInferenceAgent.position = transform.position;
                     pursuitInferenceAgent.target = pursuitBehavior.target.Value;
                     pursuitInferenceAgent.RequestDecision();
@@ -121,6 +137,20 @@ public class LeaderController : MonoBehaviour
         {
             wanderingBehavior.Update(Time.deltaTime);
             nextRotation = Quaternion.Slerp(transform.rotation, wanderingBehavior.targetRotation, Time.deltaTime * wanderingBehavior.directionChangeInterval);
+        }
+
+        var encirclingVector = encirclingBehavior.GetEncirclingVector(currentHuman?.boid);
+        if (isEncircleHumanActive && encirclingVector != Vector3.zero)
+        {
+            guidingBehavior.Init(droneController.id, transform, obstacleBoids);
+            nextRotation = Quaternion.Slerp(nextRotation, Quaternion.LookRotation(encirclingVector), 0.05f); //0.1f
+        }
+
+        // Make the drone fly towards human
+        var guidingVector = guidingBehavior.GetGuidingingVector(GuidetHuman?.boid);
+        if (isGuidingHumanActive && guidingVector != Vector3.zero)
+        {
+            //nextRotation = Quaternion.Slerp(nextRotation, Quaternion.LookRotation(guidingVector), 0.05f); //0.1f
         }
 
         var cohesionVector = cohesionBehavior.GetCohesionVector(boids);

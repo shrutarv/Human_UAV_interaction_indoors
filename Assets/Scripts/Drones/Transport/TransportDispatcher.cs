@@ -23,12 +23,13 @@ public class TransportDispatcher : MonoBehaviour, ITransportManagerListener
 
     // Update is called once per frame
     void Update()
-    {
-        if(orders.Count > 0)
+    {   
+          if(orders.Count > 0)
         {
             numberOfWaitingOrders = orders.Count;
             var order = orders.Dequeue();
             var drone = swarmController.GetNearestTransportDroneToPosition(order.source.transform.position);
+            //Debug.Log(drone.position);
             if(drone == null)
             {
                 orders.Enqueue(order);

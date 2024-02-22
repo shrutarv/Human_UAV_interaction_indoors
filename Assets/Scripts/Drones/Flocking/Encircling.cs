@@ -5,8 +5,8 @@ using UnityEngine;
 public class Encircling
 {
     public int Id { get; set; }
-    public float MinDist { get; set; } = 1.0f;
-    public float MaxDist { get; set; } = 1.8f;
+    public float MinDist { get; set; } = 1.2f;
+    public float MaxDist { get; set; } = 3.4f;
 
     public List<ObstacleBoid> obstacleBoids;
 
@@ -31,6 +31,7 @@ public class Encircling
         }
     }
 
+
     public Vector3? GetTargetPosition(Boid boid, float angle, float distance)
     {
         if (boid != null && Id != boid.Id)
@@ -42,6 +43,36 @@ public class Encircling
         }
 
         return null;
+    }
+
+    public Vector3 GetEncirclingVector(Boid boid)
+    {
+        Vector3 result = Vector3.zero;
+
+
+        if (boid != null && Id != boid.Id)
+        {
+
+            Vector3 difBody = Transform.position - boid.Body.position;
+            float distBody = Vector3.Magnitude(difBody);
+            if (distBody > MaxDist)
+            {
+                result = boid.Body.position - Transform.position;
+                result.Normalize();
+                return new Vector3(result.x, 0, result.z);
+            } else if (distBody <= MaxDist && distBody >= MinDist)
+            {
+                result = Vector3.Cross(boid.Body.position - Transform.position, Vector3.up);
+                result.Normalize();
+                return new Vector3(result.x, 0, result.z);
+            } else
+            {
+                return result;
+            }
+
+        }
+
+        return result;
     }
 
 

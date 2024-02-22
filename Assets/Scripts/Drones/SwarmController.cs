@@ -7,17 +7,29 @@ using UnityEngine;
 public class SwarmController : MonoBehaviour
 {
     public float step = 1;
-
+    public Transform d = null;
     // Start is called before the first frame update
     void Start()
     {
-        
+       
     }
 
     // Update is called once per frame
     void Update()
-    {
-        
+    {   
+         /*&]
+        //Debug.Log(GameObject.Find("Human").transform.position);
+        d = GetNearestTransportDroneToPosition(GameObject.Find("Human").transform.position);
+        if(d!=null)
+        {
+            var drone = d.Find("Drone");
+            if(drone!=null)
+            {
+            //Debug.Log(drone.position);
+            //Debug.Log(d);
+            }
+            
+        }*/
     }
 
     public Transform GetNearestTransportDroneToPosition(Vector3 target)
@@ -27,8 +39,30 @@ public class SwarmController : MonoBehaviour
         foreach (Transform droneContainer in transform)
         {
             var drone = droneContainer.Find("Drone");
+            //Debug.Log(drone.position);
             var transportStateMachine = droneContainer.GetComponentInChildren<TransportStateMachine>();
             if (transportStateMachine.CanTransport())
+            {
+                var distance = Vector3.Distance(drone.position, target);
+                if (distance < currentMinimalDistance)
+                {
+                    currentMinimalDistance = distance;
+                    nearestDrone = droneContainer;
+                }
+            }
+        }
+        return nearestDrone;
+    }
+
+    public Transform GetNearestGuidingDroneToPosition(Vector3 target)
+    {
+        var currentMinimalDistance = float.PositiveInfinity;
+        Transform nearestDrone = null;
+        foreach (Transform droneContainer in transform)
+        {
+            var drone = droneContainer.Find("Drone");
+            var transportStateMachine = droneContainer.GetComponentInChildren<TransportStateMachine>();
+            if (transportStateMachine.CanGuideHuman())
             {
                 var distance = Vector3.Distance(drone.position, target);
                 if (distance < currentMinimalDistance)
@@ -152,9 +186,30 @@ public class SwarmController : MonoBehaviour
     {
         foreach (Transform drone in transform)
         {
+            Debug.Log(drone);
             var transportStateMachine = drone.GetComponentInChildren<TransportStateMachine>();
+            Debug.Log(transportStateMachine);
             transportStateMachine.Fire(TransportStateMachine.Trigger.EncircleHuman);
         }
+    }
+
+    public void GuideHuman()
+    {
+        
+        Transform drone;
+        d = GetNearestTransportDroneToPosition(GameObject.Find("Human").transform.position);
+        if(d!=null)
+        {
+            Debug.Log("GuideHuman");
+            Debug.Log(d);
+            var transportStateMachine = d.GetComponentInChildren<TransportStateMachine>();
+            Debug.Log(transportStateMachine);
+            //var order = orders.Dequeue();
+
+            //var d = GetNearestTransportDroneToPosition(GameObject.Find("Human").transform.position);
+            transportStateMachine.Fire(TransportStateMachine.Trigger.GuideHuman);
+        }
+        
     }
 
     public void SwitchToUpperFence()
@@ -279,6 +334,16 @@ public class SwarmControllerEditor : Editor
         if (GUILayout.Button("Move Home Exactly"))
         {
             s.LetsExactlyMoveHome();
+        }
+        
+        if (GUILayout.Button("Guide Human"))
+        {
+            s.GuideHuman();
+        }
+
+        if (GUILayout.Button("Encircle Human"))
+        {
+            s.EncircleHuman();
         }
 
 
