@@ -108,6 +108,7 @@ public class DroneController : MonoBehaviour
         }
 		
 		//SHRUTARV floor based starting code
+        Debug.Log(id);
 		connection.Start(id, starttime, duration, height); //SHRUTARV
 		StartCoroutine(ObserveStartAndNotifyListeners(duration)); //SHRUTARV
 		
@@ -133,6 +134,13 @@ public class DroneController : MonoBehaviour
         StartCoroutine(ObserveLandingAndNotifyListeners(duration));
     }
 
+    public void DroneLand1(int id)
+    {
+        // Land drone with id 1
+        connection.Land(1, starttime, duration);
+        StartCoroutine(ObserveLandingAndNotifyListeners(duration));
+    }
+    
     IEnumerator ObserveLandingAndNotifyListeners(float time)
     {
         yield return new WaitForSeconds(time);
@@ -146,6 +154,13 @@ public class DroneController : MonoBehaviour
     {
         connection.MoveTo(id, starttime, duration, homeHoverPosition.x, homeHoverPosition.z, homeHoverPosition.y, 0);
     }
+
+    public void DroneMoveHome1(int id)
+    {
+        Debug.Log("DroneMoveHome1");
+        connection.MoveTo(2, starttime, duration, homeHoverPosition.x, homeHoverPosition.z, homeHoverPosition.y, 0);
+    }
+
 
     public void DroneMoveHomeAndLand()
     {

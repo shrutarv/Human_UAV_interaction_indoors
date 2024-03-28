@@ -8,6 +8,8 @@ public class SwarmController : MonoBehaviour
 {
     public float step = 1;
     public Transform d = null;
+    public bool activateFlag = false;
+    public float startTime = 0;
     // Start is called before the first frame update
     void Start()
     {
@@ -30,6 +32,16 @@ public class SwarmController : MonoBehaviour
             }
             
         }*/
+        // If time elapsed is more than 5 seconds and activate flag then trigger
+        if (Time.time - startTime > 5 && activateFlag)
+        {
+            activateFlag = false;
+            foreach (Transform drone in transform)
+            {
+                var transportStateMachine = drone.GetComponentInChildren<TransportStateMachine>();
+                transportStateMachine.Fire(TransportStateMachine.Trigger.GoToHuman);
+            }
+        } 
     }
 
     public Transform GetNearestTransportDroneToPosition(Vector3 target)
@@ -129,6 +141,8 @@ public class SwarmController : MonoBehaviour
     {
         foreach(Transform drone in transform)
         {
+            // Print Drone name
+            Debug.Log(drone.name);
             var controller = drone.GetComponentInChildren<DroneController>();
             controller.DroneStart();
         }
@@ -145,6 +159,10 @@ public class SwarmController : MonoBehaviour
 
     public void ActivateSwarm()
     {
+        activateFlag = true;
+        // save current time
+        Debug.Log("ActivateSwarm");
+        startTime = Time.time;
         foreach (Transform drone in transform)
         {
             var transportStateMachine = drone.GetComponentInChildren<TransportStateMachine>();

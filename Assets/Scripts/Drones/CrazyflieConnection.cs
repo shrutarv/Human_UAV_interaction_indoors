@@ -69,7 +69,7 @@ public class CrazyflieConnection : MonoBehaviour, IDroneConnection
         //{"id": 1, "data": [0.000, 1.000, 0.500]}
         //               starttime, duration, height
         string json = String.Format(CultureUS, "{{\"id\": {0}, \"data\": [{1:f3}, {2:f3}, {3:f3}]}}", id, starttime, duration, height);
-
+        
         //Console.WriteLine("Sending Land Command to channel {0}:\n{1}", topic, json);
 
         manager.Publish(topic, json);

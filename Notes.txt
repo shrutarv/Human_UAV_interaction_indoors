@@ -1,0 +1,1 @@
+DroneLaserUI manager has code to calculate distance to human.
