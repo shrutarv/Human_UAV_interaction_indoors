@@ -10,6 +10,7 @@ public class SwarmController : MonoBehaviour
     public Transform d = null;
     public bool activateFlag = false;
     public float startTime = 0;
+    public bool activateDroneFlag = true;
     // Start is called before the first frame update
     void Start()
     {
@@ -32,6 +33,14 @@ public class SwarmController : MonoBehaviour
             }
             
         }*/
+        // Activate swarmwhe 1 is pressed
+        if (Input.GetKeyDown(KeyCode.Alpha1) && activateDroneFlag)
+        {
+            ActivateSwarm();
+            activateDroneFlag = false;
+        }
+       
+
         // If time elapsed is more than 5 seconds and activate flag then trigger
         if (Time.time - startTime > 5 && activateFlag)
         {

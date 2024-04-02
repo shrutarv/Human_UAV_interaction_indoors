@@ -29,6 +29,12 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
     public bool goingToStation4 = false;
     public bool arrivedAtStation4 = false;
     public bool flagFinal = false;
+    public bool goingToStationCorner1 = false;
+    public bool goingToStationCorner2 = false;
+    public bool arrivedAtStationCorner1 = false;
+    public bool arrivedAtStationCorner2 = false;
+    public bool stopButtonPressed = false;
+
 
     public enum Trigger
     {
@@ -59,6 +65,8 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         ArriveAtStation,
         GoToStationTemp,
         GoToStationTemp2,
+        GoToStationCorner1,
+        GoToStationCorner2,
         GoToStartAisle,
         ArriveAtStartAisle,
         GoToStation2,
@@ -73,7 +81,9 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         LandOneDrone,
         StartOneDrone,
         GuideHuman,
-        GoWait3
+        GoWait3,
+        GoWait4,
+        WaitForHuman
         
     }
 
@@ -104,6 +114,8 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         ArrivedAtStation,
         GoingToStationTemp,
         GoingToStationTemp2,
+        GoingToStationCorner1,
+        GoingToStationCorner2,
         GoingToStation2,
         GuidingHuman,
         ArrivedAtStartAisle,
@@ -117,8 +129,10 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         Waiting,
         Waiting2,
         Waiting3,
+        Waiting4,
         LandedOneDrone,
-        StartedOneDrone    
+        StartedOneDrone,
+        WaitingForHuman  
 
         
     }
@@ -126,6 +140,7 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
     private State _state = State.Deactivated;
     private StateMachine<State, Trigger> _machine;
     public string state;
+    public bool flagOnce = false;
 
     private void SetupStateMachine()
     {
@@ -264,14 +279,34 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
             .Permit(Trigger.LandOneDrone, State.LandedOneDrone)
             .Permit(Trigger.GoToStation2, State.GoingToStation2)
             .Permit(Trigger.GoToStation3, State.GoingToStation3)
-            .Permit(Trigger.GoToStation4, State.GoingToStation4);
+            .Permit(Trigger.GoToStation4, State.GoingToStation4)
+            .Permit(Trigger.GoToStationCorner1, State.GoingToStationCorner1)
+            .Permit(Trigger.GoToStationCorner2, State.GoingToStationCorner2)
+            .Permit(Trigger.GoWait, State.Waiting);
+
+        _machine.Configure(State.WaitingForHuman)
+            .SubstateOf(State.GuidingHuman)
+            .OnEntry(HandleWaitingForHuman)
+            .Permit(Trigger.GoToStation, State.GoingToStation)
+            .Permit(Trigger.GoToStationTemp, State.GoingToStationTemp)
+            .Permit(Trigger.GoToStationTemp2, State.GoingToStationTemp2)
+            .Permit(Trigger.LandOneDrone, State.LandedOneDrone)
+            .Permit(Trigger.GoToStation2, State.GoingToStation2)
+            .Permit(Trigger.GoToStation3, State.GoingToStation3)
+            .Permit(Trigger.GoToStation4, State.GoingToStation4)
+            .Permit(Trigger.GoToStationCorner1, State.GoingToStationCorner1)
+            .Permit(Trigger.GoToStationCorner2, State.GoingToStationCorner2)
+            .Permit(Trigger.ArriveAtHuman, State.ArrivedAtHuman)
+            .Permit(Trigger.GoWait, State.Waiting);
+
 
         _machine.Configure(State.GoingToStation)
             .SubstateOf(State.GuidingHuman)
             .OnEntry(HandleGoingToStation)
             .Permit(Trigger.Reposition, State.RepositioningWhileGoingToStation)   //Check reposition
             .Permit(Trigger.LandOneDrone, State.LandedOneDrone)
-            .Permit(Trigger.ArriveAtStation, State.ArrivedAtStation);
+            .Permit(Trigger.ArriveAtStation, State.ArrivedAtStation)
+            .Permit(Trigger.WaitForHuman, State.WaitingForHuman);
 
         _machine.Configure(State.RepositioningWhileGoingToStation)
             .SubstateOf(State.GuidingHuman)
@@ -288,30 +323,58 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         _machine.Configure(State.Waiting)
             .SubstateOf(State.GuidingHuman)
             .OnEntry(HandleWaiting)
-            .Permit(Trigger.GoToStationTemp, State.GoingToStationTemp);
+            .Permit(Trigger.GoToStationTemp, State.GoingToStationTemp)
+            .Permit(Trigger.GoToStationCorner1, State.GoingToStationCorner1)
+            .Permit(Trigger.GoWait3, State.Waiting3);
 
         _machine.Configure(State.Waiting2)
             .SubstateOf(State.GuidingHuman)
             .OnEntry(HandleWaiting2)
             .Permit(Trigger.GoToStationTemp2, State.GoingToStationTemp2);
 
-           _machine.Configure(State.Waiting3)
+        _machine.Configure(State.Waiting3)
             .SubstateOf(State.GuidingHuman)
             .OnEntry(HandleWaiting3)
-            .Permit(Trigger.GoToStationTemp2, State.GoingToStationTemp2);
+            .Permit(Trigger.GoToStationTemp2, State.GoingToStationTemp2)
+            .Permit(Trigger.GoToStationTemp, State.GoingToStationTemp)
+            .Permit(Trigger.GoToStation2, State.GoingToStation2);
+
+         _machine.Configure(State.Waiting4)
+            .SubstateOf(State.GuidingHuman)
+            .OnEntry(HandleWaiting4)
+            .Permit(Trigger.GoToStation4, State.GoingToStation4);
+
 
         _machine.Configure(State.GoingToStationTemp)
             .SubstateOf(State.GuidingHuman)
             .OnEntry(HandleGoingToStationTemp)
             .Permit(Trigger.GoToStation2, State.GoingToStation2)
-            .Permit(Trigger.GoToStationTemp2, State.GoingToStationTemp2);
+            .Permit(Trigger.GoToStationTemp2, State.GoingToStationTemp2)
+            .Permit(Trigger.GoToStationCorner2, State.GoingToStationCorner2)
+            .Permit(Trigger.WaitForHuman, State.WaitingForHuman);
 
          _machine.Configure(State.GoingToStationTemp2)
             .SubstateOf(State.GuidingHuman)
             .OnEntry(HandleGoingToStationTemp2)
             .Permit(Trigger.GoToStation, State.GoingToStation)
             .Permit(Trigger.GoToStation3, State.GoingToStation3)
-            .Permit(Trigger.GoToStation4, State.GoingToStation4);
+            .Permit(Trigger.GoToStation4, State.GoingToStation4)
+            .Permit(Trigger.WaitForHuman, State.WaitingForHuman)
+             .Permit(Trigger.GoWait4, State.Waiting4);
+
+        _machine.Configure(State.GoingToStationCorner1)
+            .SubstateOf(State.GuidingHuman)
+            .OnEntry(HandleGoingToStationCorner1)
+            .Permit(Trigger.GoToStation2, State.GoingToStation2)
+            .Permit(Trigger.GoToStationTemp, State.GoingToStationTemp)
+            .Permit(Trigger.GoToStationCorner2, State.GoingToStationCorner2);
+            
+         _machine.Configure(State.GoingToStationCorner2)
+            .SubstateOf(State.GuidingHuman)
+            .OnEntry(HandleGoingToStationCorner2)
+            .Permit(Trigger.GoToStation2, State.GoingToStation2)
+            .Permit(Trigger.GoToStation3, State.GoingToStation3)
+            .Permit(Trigger.GoToStationTemp2, State.GoingToStationTemp2);
 
         _machine.Configure(State.GoingToStation3)
             .SubstateOf(State.GuidingHuman)
@@ -319,14 +382,17 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
             .Permit(Trigger.LandOneDrone, State.LandedOneDrone)
             .Permit(Trigger.GoWait2, State.Waiting2)
             .Permit(Trigger.GoToStationTemp, State.GoingToStationTemp)
-            .Permit(Trigger.GoWait3, State.Waiting3);
+            .Permit(Trigger.GoWait3, State.Waiting3)
+            .Permit(Trigger.WaitForHuman, State.WaitingForHuman);;
 
         _machine.Configure(State.GoingToStation2)
             .SubstateOf(State.GuidingHuman)
             .OnEntry(HandleGoingToStation2)
             .Permit(Trigger.GoToStation, State.GoingToStation)
             .Permit(Trigger.LandOneDrone, State.LandedOneDrone)
-            .Permit(Trigger.GoWait2, State.Waiting2);
+            .Permit(Trigger.GoWait2, State.Waiting2)
+            .Permit(Trigger.WaitForHuman, State.WaitingForHuman)
+            .Permit(Trigger.GoToStationTemp2, State.GoingToStationTemp2);
 
         _machine.Configure(State.GoingToStation4)
             .SubstateOf(State.GuidingHuman)
@@ -334,7 +400,8 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
             .Permit(Trigger.LandOneDrone, State.LandedOneDrone)
             .Permit(Trigger.GoWait2, State.Waiting2)
             .Permit(Trigger.GoToStationTemp, State.GoingToStationTemp)
-            .Permit(Trigger.GoHome, State.GoingHome);
+            .Permit(Trigger.GoHome, State.GoingHome)
+            .Permit(Trigger.WaitForHuman, State.WaitingForHuman);
 
          _machine.Configure(State.StartedOneDrone)
             .OnEntry(HandleStartedOneDrone)
@@ -380,11 +447,12 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
     public float lastDistanceToEncircleTarget = 0;
     public float timeDistanceToEncircleTargetDidNotDecrease = 0;
     public float repositionWhileEncirclingTime = 0;
-
+    public static float globalDistanceBetweenDroneAndHuman = 1.6f;
     private TransportOrder TransportOrder;
     private GuideHumanOrder Guide;
     public bool numberPressed = false;
     private bool enterPressed = false;
+    public bool waiting4 = false;
     // Start is called before the first frame update
     void Start()
     {
@@ -462,6 +530,17 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
             MonitorGoingToStationTemp2();
         }
 
+        if (_machine.IsInState(State.GoingToStationCorner1))
+        {
+            MonitorGoingToStationCorner1();
+        }
+
+        if (_machine.IsInState(State.GoingToStationCorner2))
+        {
+            MonitorGoingToStationCorner2();
+        }
+
+
          if (_machine.IsInState(State.GoingToStation2))
         {
             MonitorGoingToStation2();
@@ -500,18 +579,37 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
             MonitorGoingToStation4();
         }
 
+        if(_machine.IsInState(State.WaitingForHuman))
+        {
+            MonitorWaitingForHuman();
+        }
+
+        if(_machine.IsInState(State.Waiting4))
+        {
+            MonitorWaiting4();
+        }
+
         if (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEquals))
         {
             if (CanGuideHuman() && !enterPressed)
             {
-                Debug.Log("Triggering GoToHuman");
-                Fire(Trigger.GoToHuman);
-                enterPressed = true;
+                Debug.Log("StopPressed");
+                //Fire(Trigger.GoToHuman);
+                stopButtonPressed = true;
+                flagOnce = true;
             }
         }
+        // WHen q is pressed land all drones
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            Debug.Log("Land all drones");
+            leaderController.droneController.DroneLand();
+            Fire(Trigger.Land);
+        }
+        
         // When 1 is pressed, fire trigger.
         
-        if (Input.GetKeyDown(KeyCode.Keypad1) || Input.GetKeyDown(KeyCode.Alpha1))
+        if (Input.GetKeyDown(KeyCode.P) || Input.GetKeyDown(KeyCode.P))
        {
             numberPressed = true;
             Debug.Log("Land drone 1");
@@ -866,16 +964,26 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
 
     private void MonitorGoingToHuman()
     {
-         var distanceToHuman = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Human").transform.position);
+        var distanceToHuman = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Human").transform.position);
+        
+        
          //Debug.Log("Distance to human: " + distanceToHuman);
         if(timeDistanceToStationDidNotDecrease > 5)
         {
             Fire(Trigger.Reposition);
         }
 
-        if (leaderController.pursuitBehavior.HasDroneReachedTarget()|| distanceToHuman < 1.6f)
+        if (leaderController.pursuitBehavior.HasDroneReachedTarget()|| distanceToHuman < globalDistanceBetweenDroneAndHuman || stopButtonPressed)
         {
             // wait for 2 secs
+            if (stopButtonPressed)
+            {
+                globalDistanceBetweenDroneAndHuman = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Human").transform.position);
+                Debug.Log("Global Distance between drone and human: " + globalDistanceBetweenDroneAndHuman);
+                stopButtonPressed = false;       
+            }
+            
+            
             if (!arrivedAtHuman)
             {startTime = Time.time;
             arrivedAtHuman = true;
@@ -884,6 +992,7 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
             {
             
             Fire(Trigger.ArriveAtHuman);
+            arrivedAtHuman = false;
             }
         }
     }
@@ -912,6 +1021,16 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
             {
                 //goingToStation2 = false;
                 Fire(Trigger.GoToStationTemp2);
+            }
+            else if(goingToStationCorner1)
+            {
+                //goingToStation2 = false;
+                Fire(Trigger.GoToStationCorner1);
+            }
+            else if(goingToStationCorner2)
+            {
+                //goingToStation2 = false;
+                Fire(Trigger.GoToStationCorner2);
             }
         }
         else if(round2)
@@ -946,13 +1065,67 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
                 //goingToStation2 = false;
                 Fire(Trigger.GoToStation4);
             }
+             else if(goingToStationCorner1)
+            {
+                //goingToStation2 = false;
+                Fire(Trigger.GoToStationCorner1);
+            }
+            else if(goingToStationCorner2)
+            {
+                //goingToStation2 = false;
+                Fire(Trigger.GoToStationCorner2);
+            }
         }
         //Fire(Trigger.GoToStation);
     }
 
+    private void HandleWaitingForHuman(StateMachine<State, Trigger>.Transition t)
+    {
+        Debug.Log("Waiting For Human");
+        //get current location of drone
+        leaderController.targetPosition = GameObject.Find("Drone").transform.position;
+        leaderController.pursuitBehavior.SetTarget(leaderController.targetPosition);
+
+        leaderController.leadingDroneActive = true;
+        leaderController.isPursuitActive = true;
+        leaderController.isEncircleHumanActive = false;
+        leaderController.isAlignmentActive = false;
+        leaderController.isCohesionActive = false;
+        leaderController.isWanderingActive = false;
+
+    }
+
+    private void MonitorWaitingForHuman()
+    {
+        var distanceToHuman = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Human").transform.position);
+         //Debug.Log("Distance to human: " + distanceToHuman);
+        if(timeDistanceToStationDidNotDecrease > 5)
+        {
+            Fire(Trigger.Reposition);
+        }
+        //Debug.Log("Distance to human: " + distanceToHuman);
+        if (distanceToHuman < globalDistanceBetweenDroneAndHuman)
+        {
+            Debug.Log(globalDistanceBetweenDroneAndHuman);
+            //Debug.Log(arrivedAtHuman);
+            // wait for 2 secs
+            if (!arrivedAtHuman)
+            {startTime = Time.time;
+            arrivedAtHuman = true;
+            }
+            if ((Time.time - startTime > 2.0f) && arrivedAtHuman)
+            {
+            
+            Fire(Trigger.ArriveAtHuman);
+            Debug.Log("Trigger Arrive at human");
+            
+            }
+        }
+    }
+
     private void MonitorArrivedAtHuman()
     {
-        if (Time.time - startTime > 2.0f)
+        if (Time.time - startTime > 2.0f) //wait for 2 sec around the human
         {
             if(goingToStationTemp)
             {
@@ -973,6 +1146,16 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
             {
                 goingToStationTemp2 = false;
                 Fire(Trigger.GoToStationTemp2);
+            }
+            else if(goingToStationCorner1)
+            {
+                goingToStationCorner1 = false;
+                Fire(Trigger.GoToStationCorner1);
+            }
+            else if(goingToStationCorner2)
+            {
+                goingToStationCorner2 = false;
+                Fire(Trigger.GoToStationCorner2);
             }
           
             //Fire(Trigger.GoToStation);
@@ -1005,15 +1188,19 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         goingToStation2 = false;
         //GuideHumanOrder.load.transform.position = leaderController.droneController.transform.position;
 
+        // compute distance between drone and station
+        var distanceDronetoStation = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Station").transform.position);
         var distanceToStation = leaderController.pursuitBehavior.GetDistanceFromLeaderToTarget();
         var distanceChange = Math.Abs(lastDistanceToStation - distanceToStation);
         var distanceToHuman = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Human").transform.position);
+        var currentPosition = GameObject.Find("Drone").transform.position;
         //Debug.Log("Distance to human: " + distanceToHuman);
 
         // if distance between drone and human is greater than 2.0 then drone flies back to the human
-        if (distanceToHuman > 2.0f)
+        if (distanceToHuman > globalDistanceBetweenDroneAndHuman + 1.5f)
         {
-            Fire(Trigger.GoToHuman);
+            //Fire(Trigger.GoToHuman);
+            Fire(Trigger.WaitForHuman);
         }
 
         if(distanceChange < 0.5f)
@@ -1023,8 +1210,8 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         {
             timeDistanceToStationDidNotDecrease = 0;
         }
-       
-        if (leaderController.pursuitBehavior.HasDroneReachedTarget()|| distanceToStation < 1.6f)
+        //Debug.Log("Distance to station: " + distanceDronetoStation);
+        if (distanceDronetoStation < 2.5f)
         {
             // wait for 2 secs
             if (!arrivedAtStation)
@@ -1045,6 +1232,8 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         leaderController.isUpperFencingActive = true;
         leaderController.targetPosition = GameObject.Find("Station").transform.position;
         leaderController.targetPosition.x = leaderController.targetPosition.x - 4.0f;
+        leaderController.targetPosition.z = leaderController.targetPosition.z - 0.5f;
+        leaderController.targetPosition.y = 1.0f;
         leaderController.pursuitBehavior.SetTarget(leaderController.targetPosition);
         if (round1)
             Fire(Trigger.GoWait);
@@ -1063,6 +1252,7 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         leaderController.isUpperFencingActive = true;
         leaderController.targetPosition = GameObject.Find("Station2").transform.position;
         leaderController.targetPosition.x = leaderController.targetPosition.x + 3.0f;
+        leaderController.targetPosition.y = 1.0f;
         leaderController.pursuitBehavior.SetTarget(leaderController.targetPosition);
        
         Debug.Log("Waiting2");
@@ -1078,9 +1268,12 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         }
        
         var distanceToHuman = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Human").transform.position);
-        if ((Time.time - startTime > 5.0f) && (distanceToHuman < 2.0f))
+        if ((Time.time - startTime > 5.0f) && (distanceToHuman < globalDistanceBetweenDroneAndHuman + 1.5f))
         {
-            Fire(Trigger.GoToStationTemp);
+            //Fire(Trigger.GoToStationTemp);
+            //Fire(Trigger.GoToStationCorner1);
+            Fire(Trigger.GoWait3);
+            waiting = false;
         }
 
     }
@@ -1097,6 +1290,7 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         if ((Time.time - startTime > 5.0f) && (distanceToHuman < 2.0f))
         {
             Fire(Trigger.GoToStationTemp2);
+            waiting = false;
         }
 
     }
@@ -1116,7 +1310,8 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         leaderController.isEncircleHumanActive = false;
         leaderController.isAlignmentActive = false;
         leaderController.isCohesionActive = false;
-        leaderController.isWanderingActive = false;
+        //leaderController.isWanderingActive = false;
+        leaderController.isWanderingActive = true;
     }
 
 
@@ -1125,6 +1320,8 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         goingToStationTemp = true;
         goingToStation = false;
         goingToStation2 = false;
+        goingToStationCorner1 = false;
+        goingToStationCorner2 = false; 
         //GuideHumanOrder.load.transform.position = leaderController.droneController.transform.position;
 
         var distanceToStation = leaderController.pursuitBehavior.GetDistanceFromLeaderToTarget();
@@ -1138,7 +1335,7 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         {
             timeDistanceToStationDidNotDecrease = 0;
         }
-         if (distanceToHuman > 2.0f)
+         if (distanceToHuman > globalDistanceBetweenDroneAndHuman + 1.5f)
         {
             Fire(Trigger.GoToHuman);
         }
@@ -1161,7 +1358,122 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         }
     }
 
-   private void HandleGoingToStation2(StateMachine<State, Trigger>.Transition t)
+    private void HandleGoingToStationCorner1(StateMachine<State, Trigger>.Transition t)
+    {
+        Debug.Log("Going to station corner 1");
+        leaderController.isUpperFencingActive = true;
+        leaderController.isWanderingActive = true;
+        leaderController.targetPosition = GameObject.Find("Station").transform.position;
+        leaderController.targetPosition.x = leaderController.targetPosition.x - 13.0f;
+        //leaderController.targetPosition.y = 1.0f;
+        Debug.Log("leaderController.targetPosition" + leaderController.targetPosition);
+        leaderController.pursuitBehavior.SetTarget(leaderController.targetPosition);
+
+        
+    }
+
+    private void MonitorGoingToStationCorner1()
+    {
+        //Debug.Log("monitor going to station corner 1");
+        goingToStationCorner1 = true;
+        goingToStationTemp = false;
+        goingToStation = false;
+        goingToStation2 = false;
+        goingToStation3 = false;
+        goingToStation4 = false;
+        goingToStationCorner2 = false;
+        //GuideHumanOrder.load.transform.position = leaderController.droneController.transform.position;
+
+        var distanceToStation = leaderController.pursuitBehavior.GetDistanceFromLeaderToTarget();
+        var distanceChange = Math.Abs(lastDistanceToStation - distanceToStation);
+        var distanceToHuman = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Human").transform.position);
+        //Debug.Log("Distance to human: " + distanceToHuman);
+        
+         if (distanceToHuman > 2.0f)
+        {
+            Fire(Trigger.GoToHuman);
+        }
+        if (leaderController.pursuitBehavior.HasDroneReachedTarget()|| distanceToStation < 1.6f)
+        {
+            // wait for 2 secs
+            if (!arrivedAtStationCorner1)
+            {startTime = Time.time;
+            arrivedAtStationCorner1 = true;
+            }
+            
+            if ((Time.time - startTime > 2.0f) && arrivedAtStationCorner1)
+            {
+            Debug.Log("Arrived at station corner 1");  
+            Fire(Trigger.GoToStationTemp);
+            }
+            
+          
+        }
+    }
+
+    private void HandleGoingToStationCorner2(StateMachine<State, Trigger>.Transition t)
+    {
+        Debug.Log("Going to station corner 2");
+        leaderController.isUpperFencingActive = false;
+
+        leaderController.targetPosition = GameObject.Find("StationCorner2").transform.position;
+        leaderController.targetPosition.y = 1.0f;
+        Debug.Log("leaderController.targetPosition" + leaderController.targetPosition);
+        leaderController.pursuitBehavior.SetTarget(leaderController.targetPosition);
+
+        leaderController.leadingDroneActive = true;
+        leaderController.isPursuitActive = true;
+        leaderController.isEncircleHumanActive = false;
+        leaderController.isAlignmentActive = false;
+        leaderController.isCohesionActive = false;
+        leaderController.isWanderingActive = false;
+    }
+    
+    private void MonitorGoingToStationCorner2()
+    {
+        goingToStationCorner2 = true;
+        goingToStationTemp = false;
+        goingToStation = false;
+        goingToStation2 = false;
+        goingToStation3 = false;
+        goingToStation4 = false;
+        goingToStationCorner1 = false;
+        //GuideHumanOrder.load.transform.position = leaderController.droneController.transform.position;
+
+        var distanceToStation = leaderController.pursuitBehavior.GetDistanceFromLeaderToTarget();
+        var distanceChange = Math.Abs(lastDistanceToStation - distanceToStation);
+        var distanceToHuman = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Human").transform.position);
+        //Debug.Log("Distance to human: " + distanceToHuman);
+        if(distanceChange < 0.5f)
+        {
+            timeDistanceToStationDidNotDecrease += Time.deltaTime;
+        } else
+        {
+            timeDistanceToStationDidNotDecrease = 0;
+        }
+         if (distanceToHuman > 2.0f)
+        {
+            Fire(Trigger.GoToHuman);
+        }
+        if (leaderController.pursuitBehavior.HasDroneReachedTarget()|| distanceToStation < 1.6f)
+        {
+            // wait for 2 secs
+            if (!arrivedAtStationCorner2)
+            {startTime = Time.time;
+            arrivedAtStationCorner2 = true;
+            }
+            
+            if ((Time.time - startTime > 2.0f) && arrivedAtStationCorner2)
+            {
+            Debug.Log("Arrived at station corner 2");  
+            Fire(Trigger.GoToStation2);
+            }
+            
+          
+        }
+    }
+
+    private void HandleGoingToStation2(StateMachine<State, Trigger>.Transition t)
     {
         Debug.Log("Going to station 2");
         leaderController.isUpperFencingActive = false;
@@ -1184,9 +1496,14 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         goingToStation2 = true;
         goingToStation = false;
         goingToStationTemp = false;
+        goingToStation3 = false;
+        goingToStation4 = false;
+        goingToStationCorner1 = false;
+        goingToStationCorner2 = false;
+
 
         //GuideHumanOrder.load.transform.position = leaderController.droneController.transform.position;
-
+        var distanceDronetoStation = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Station2").transform.position);
         var distanceToStation = leaderController.pursuitBehavior.GetDistanceFromLeaderToTarget();
         var distanceChange = Math.Abs(lastDistanceToStation - distanceToStation);
         var distanceToHuman = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Human").transform.position);
@@ -1198,12 +1515,13 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         {
             timeDistanceToStationDidNotDecrease = 0;
         }
-         if (distanceToHuman > 2.0f)
+         if (distanceToHuman > globalDistanceBetweenDroneAndHuman + 1.5f)
         {
-            Fire(Trigger.GoToHuman);
+            //Fire(Trigger.GoToHuman);
+            Fire(Trigger.WaitForHuman);
         }
 
-        if (leaderController.pursuitBehavior.HasDroneReachedTarget()|| distanceToStation < 1.6f)
+        if (distanceDronetoStation < 2.5f)
         {
             // wait for 2 secs
             if (!arrivedAtStation2)
@@ -1222,7 +1540,7 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
             {
                 if ((Time.time - startTime > 2.0f) && arrivedAtStation2)
                 {
-                Debug.Log("Arrived at station 2");
+                Debug.Log("Arrived at station 2 round2");
                 Fire(Trigger.GoToStationTemp2);
                 }
             }
@@ -1256,8 +1574,9 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         goingToStation = false;
         goingToStation2 = false;
         goingToStation3 = false;
+        goingToStation4 = false;
         //GuideHumanOrder.load.transform.position = leaderController.droneController.transform.position;
-
+        var distanceDroneToStation = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("StationTemp2").transform.position);
         var distanceToStation = leaderController.pursuitBehavior.GetDistanceFromLeaderToTarget();
         var distanceChange = Math.Abs(lastDistanceToStation - distanceToStation);
         var distanceToHuman = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Human").transform.position);
@@ -1269,12 +1588,13 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         {
             timeDistanceToStationDidNotDecrease = 0;
         }
-         if (distanceToHuman > 2.0f)
+         if (distanceToHuman > globalDistanceBetweenDroneAndHuman + 1.5f)
         {
-            Fire(Trigger.GoToHuman);
+            //Fire(Trigger.GoToHuman);
+            Fire(Trigger.WaitForHuman);
         }
 
-        if (leaderController.pursuitBehavior.HasDroneReachedTarget()|| distanceToStation < 1.6f)
+        if (distanceDroneToStation < 2.5f)
         {
             // wait for 2 secs
             if (!arrivedAtStationTemp2)
@@ -1294,7 +1614,8 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
             {   
                 //flagFinal = false;
                 Debug.Log("Arrived at station temp 2 round2");
-                Fire(Trigger.GoToStation4);
+                //Fire(Trigger.GoToStation4);
+                Fire(Trigger.GoWait4);
             }
           
         }
@@ -1327,7 +1648,7 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         goingToStationTemp2 = false;
         goingToStation2 = false;
         //GuideHumanOrder.load.transform.position = leaderController.droneController.transform.position;
-
+        var distanceDroneToStation = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Station3").transform.position);
         var distanceToStation = leaderController.pursuitBehavior.GetDistanceFromLeaderToTarget();
         var distanceChange = Math.Abs(lastDistanceToStation - distanceToStation);
         var distanceToHuman = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Human").transform.position);
@@ -1339,11 +1660,11 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         {
             timeDistanceToStationDidNotDecrease = 0;
         }
-         if (distanceToHuman > 2.0f)
+         if (distanceToHuman > globalDistanceBetweenDroneAndHuman + 1.5f)
         {
             Fire(Trigger.GoToHuman);
         }
-        if (leaderController.pursuitBehavior.HasDroneReachedTarget()|| distanceToStation < 1.6f)
+        if (distanceDroneToStation < 2.5f)
         {
             // wait for 2 secs
             if (!arrivedAtStation3)
@@ -1364,8 +1685,8 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
     {   
         leaderController.isUpperFencingActive = true;
         leaderController.targetPosition = GameObject.Find("Station3").transform.position;
-        leaderController.targetPosition.x = leaderController.targetPosition.x - 6.5f;
-        leaderController.targetPosition.z = leaderController.targetPosition.z - 3.0f;
+        leaderController.targetPosition.x = leaderController.targetPosition.x - 7.5f;
+        leaderController.targetPosition.z = leaderController.targetPosition.z -2.0f;
         leaderController.pursuitBehavior.SetTarget(leaderController.targetPosition);
        
         Debug.Log("Waiting3");
@@ -1376,16 +1697,51 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
     {
         // Wait for 5 secs
         if (!waiting)
-        {    startTime = Time.time;
+        {   
+            startTime = Time.time;
+            //Debug.Log("start time" + startTime);
             waiting = true;
         }
        
         var distanceToHuman = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Human").transform.position);
-        if ((Time.time - startTime > 5.0f) && (distanceToHuman < 2.0f))
+        if ((Time.time - startTime > 20.0f) && (distanceToHuman < globalDistanceBetweenDroneAndHuman + 1.5f))
         {
-            Fire(Trigger.GoToStationTemp2);
+            //Debug.Log("Time" + Time.time);
+            //Fire(Trigger.GoToStationTemp);
+            Fire(Trigger.GoToStation2);
         }
 
+    }
+
+    public void HandleWaiting4()
+    {   
+        leaderController.isUpperFencingActive = true;
+        leaderController.targetPosition = GameObject.Find("StationTemp2").transform.position;
+        leaderController.targetPosition.x = leaderController.targetPosition.x + 2.0f;
+        leaderController.targetPosition.z = leaderController.targetPosition.z + 2.0f;
+        leaderController.pursuitBehavior.SetTarget(leaderController.targetPosition);
+       
+        Debug.Log("Waiting4");
+        
+    }
+
+    public void MonitorWaiting4()
+    {
+        // Wait for 5 secs
+        if (!waiting4)
+        {   
+            startTime = Time.time;
+            //Debug.Log("start time" + startTime);
+            waiting4 = true;
+        }
+       
+        var distanceToHuman = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Human").transform.position);
+        if ((Time.time - startTime > 12.0f) && (distanceToHuman < globalDistanceBetweenDroneAndHuman + 1.5f))
+        {
+            //Debug.Log("Time" + Time.time);
+            //Fire(Trigger.GoToStationTemp);
+            Fire(Trigger.GoToStation4);
+        }
     }
 
     private void HandleGoingToStation4(StateMachine<State, Trigger>.Transition t)
@@ -1415,7 +1771,7 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         goingToStation2 = false;
         goingToStation3 = false;
         //GuideHumanOrder.load.transform.position = leaderController.droneController.transform.position;
-
+        var distanceDroneToStation = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Station4").transform.position);
         var distanceToStation = leaderController.pursuitBehavior.GetDistanceFromLeaderToTarget();
         var distanceChange = Math.Abs(lastDistanceToStation - distanceToStation);
         var distanceToHuman = Vector3.Distance(GameObject.Find("Drone").transform.position, GameObject.Find("Human").transform.position);
@@ -1427,9 +1783,10 @@ public class TransportStateMachine : MonoBehaviour, IDroneControllerListener
         {
             timeDistanceToStationDidNotDecrease = 0;
         }
-         if (distanceToHuman > 2.0f)
+         if (distanceToHuman > globalDistanceBetweenDroneAndHuman + 1.5f)
         {
-            Fire(Trigger.GoToHuman);
+            //Fire(Trigger.GoToHuman);
+            Fire(Trigger.WaitForHuman);
         }
         if (leaderController.pursuitBehavior.HasDroneReachedTarget()|| distanceToStation < 1.6f)
         {

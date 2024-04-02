@@ -19,7 +19,7 @@ public class ObstacleBoid : MonoBehaviour
         {
             boid = new Boid();
             boid.Body = transform;
-            boid.SeparationDistance = 1.2f;
+            boid.SeparationDistance = 1.0f; //original 1.2f
         }
         return boid;
     }
