@@ -8,9 +8,11 @@ public class SwarmController : MonoBehaviour
 {
     public float step = 1;
     public Transform d = null;
-    public bool activateFlag = false;
+    public static bool activateFlag = false;
     public float startTime = 0;
     public bool activateDroneFlag = true;
+    public static bool wait1 = false;
+    public bool Flag = true;
     // Start is called before the first frame update
     void Start()
     {
@@ -34,16 +36,20 @@ public class SwarmController : MonoBehaviour
             
         }*/
         // Activate swarmwhe 1 is pressed
-        if (Input.GetKeyDown(KeyCode.Alpha1) && activateDroneFlag)
+        if ((Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) && activateDroneFlag)
         {
             ActivateSwarm();
             activateDroneFlag = false;
+            activateFlag = true;
         }
        
+       //Activate Swarm when T is pressed
+        
 
         // If time elapsed is more than 5 seconds and activate flag then trigger
-        if (Time.time - startTime > 5 && activateFlag)
-        {
+        if ((Time.time - startTime) > 5 && activateFlag)
+        {   
+            Debug.Log("Triggering drones to go to human");
             activateFlag = false;
             foreach (Transform drone in transform)
             {
@@ -168,7 +174,7 @@ public class SwarmController : MonoBehaviour
 
     public void ActivateSwarm()
     {
-        activateFlag = true;
+        //activateFlag = true;
         // save current time
         Debug.Log("ActivateSwarm");
         startTime = Time.time;
