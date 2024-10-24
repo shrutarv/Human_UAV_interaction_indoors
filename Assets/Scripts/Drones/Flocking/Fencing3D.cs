@@ -9,7 +9,7 @@ public class Fencing3D {
     public float yMax = 2.5f; //NILS
     public float yMin = 1.0f; //NILS
     public float zMax = 5f;
-    public float zMin = -4f;
+    public float zMin = -4.1f;
 
     public Transform transform;
 
