@@ -10,7 +10,9 @@ maintain full situational awareness. A dataset of these interactions is publicly
   <img src="media/scenario.png" width = "650" />  
 </p>
 
-
-
 https://github.com/user-attachments/assets/e48849dd-36d8-4ca3-8b1c-9a57b91b7625
 
+# Architecture
+<p align="center">
+  <img src="media/architecture.jpg" width = "650" />  
+</p>
