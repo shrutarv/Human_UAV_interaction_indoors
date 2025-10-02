@@ -10,10 +10,7 @@ maintain full situational awareness. A dataset of these interactions is publicly
   <img src="media/scenario.png" width = "650" />  
 </p>
 
-<p align="center">
-  <video width="640" height="360" controls>
-    <source src="./media/output_fast.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
-</p>
+
+
+https://github.com/user-attachments/assets/e48849dd-36d8-4ca3-8b1c-9a57b91b7625
 
