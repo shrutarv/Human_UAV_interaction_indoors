@@ -11,6 +11,6 @@ maintain full situational awareness. A dataset of these interactions is publicly
 </p>
 
 <video width="640" height="360" controls>
-  <source src="./media/output_fast.mp4" type="video/mp4">
+  <source src="media/output_fast.mp4" type="video/mp4">
 </video>
 
