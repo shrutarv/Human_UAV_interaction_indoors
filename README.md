@@ -9,11 +9,7 @@ maintain full situational awareness. A dataset of these interactions is publicly
   <img src="media/scenario.png" width = "650" />  
 </p>
 
-
-<p align="center">
-  <img src="media/output_fast.mp4" width = "650" />  
-</p>
 <video width="640" height="360" controls>
   <source src="media/output_fast.mp4" type="video/mp4">
-  </video>
+</video>
 
