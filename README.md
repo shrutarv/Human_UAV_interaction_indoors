@@ -5,4 +5,7 @@ This study focuses on the technical feasibility of human-UAV interaction in a wa
 interacting via a keypad and sensor-based distance estimation. Interaction is recorded using RGB and motion-capture cameras. Results show that safe human-UAV interaction is feasible when UAVs 
 maintain full situational awareness. A dataset of these interactions is publicly available at [[Zenodo](https://zenodo.org/records/14181589)]
 
+<p align="center">
+  <img src="media/scenario.mp4" width = "650" />  
+</p>
 
